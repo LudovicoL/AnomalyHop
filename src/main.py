@@ -21,7 +21,7 @@ import my_parser
 import cw_saab as sb
 from display import plot_fig
 
-from mvtec_data_loader import *
+from mvtec import *
 from AITEX import *
 import utils as bb
 from BTAD import *
@@ -48,6 +48,8 @@ def main():
     true_negative = 0
     false_positive = 0
     false_negative = 0
+    train_times = []
+    test_times = []
     # - - - - - - - - - - - - - - - -  arguments - - - - - - - - - - - - - - - - 
     
     log_file = open(log_dir + "log.txt", "a")
@@ -66,7 +68,7 @@ def main():
 
     bb.myPrint("Dataset used: " + args.dataset, log_file)
     if args.dataset == "mvtec":
-        CLASS_NAMES = MVTEC_CLASS_NAMES
+        CLASS_NAMES = [item for item in args.class_names]
     elif args.dataset == "aitex":
         bb.myPrint("Resize: " + str(args.resize), log_file)
         prepareAitex(args.resize, log_file)
@@ -75,7 +77,8 @@ def main():
         CLASS_NAMES = AITEX_CLASS_NAMES
     elif args.dataset == "btad":
         prepareBtad(log_file)
-        CLASS_NAMES = BTAD_CLASS_NAMES
+        # CLASS_NAMES = BTAD_CLASS_NAMES
+        CLASS_NAMES = [item for item in args.class_names]
     elif args.dataset == "custom":
         prepareCustomDataset(log_file)
         CLASS_NAMES = CUSTOMDATASET_CLASS_NAMES
@@ -114,7 +117,7 @@ def main():
 
 
         # - - - - - - - - - - - - - - - - - - - - Training - - - - - - - - - - - - - - - - - - - - - - - - 
-
+        train_time = time.time()    # Measure the train time
         # extract train set features
         train_feature_filepath = os.path.join(log_dir, 'train_%s.pkl' % class_name)
         
@@ -190,10 +193,10 @@ def main():
                 conv_inv = np.linalg.inv(cov)
 
                 train_outputs.append([mean, conv_inv])
-                            
+        train_times.append(time.time() - train_time)                    
         # - - - - - - - - - - - - - - - - - - - - Testing - - - - - - - - - - - - - - - - - - - - - - - - 
+        test_time = time.time()    # Measure the test time
         bb.myPrint("\n######   Testing:   ######", log_file)
-
         gt_list = []
         gt_mask_list = []
         test_imgs = []
@@ -206,8 +209,7 @@ def main():
         
         test_imgs = np.stack(test_imgs)
 
-        start_time = time.time()
-        s_time = time.time()
+        feature_extract_test_time = time.time()    # Measure the test time
         
         _, sb_test_feature_all, _ = sb.inference_chl_wise(sb_params,
                                                             test_imgs, 
@@ -216,7 +218,7 @@ def main():
                                                             len(KERNEL)-1,
                                                             collectFlag=True)
 
-        bb.myPrint('Time for feature extraction: '+str(time.time() - s_time), log_file)
+        bb.myPrint('Time for feature extraction: '+str(time.time() - feature_extract_test_time), log_file)
 
         # show all hops dimensions
         for i in range(len(sb_test_feature_all)):
@@ -338,8 +340,8 @@ def main():
 
         end_time = time.time()
 
-        bb.myPrint('Time for testing process: {} for {} images'.format(end_time - start_time,test_imgs.shape[0]), log_file)
-
+        bb.myPrint('Time for testing process: {} for {} images'.format(end_time - test_time,test_imgs.shape[0]), log_file)
+        test_times.append(end_time - test_time)
         # calculate image-level ROC AUC score
         img_scores = scores_final.reshape(scores_final.shape[0], -1).max(axis=1)
         gt_list = np.asarray(gt_list)
@@ -402,6 +404,8 @@ def main():
     bb.myPrint('F1-Score: ' + str(bb.F_score(precision, sensitivity, beta=1)), log_file)
     bb.myPrint('F2-Score: ' + str(bb.F_score(precision, sensitivity, beta=2)), log_file)
 
+    bb.myPrint("Average train time: %s seconds." % np.mean(train_times), log_file)
+    bb.myPrint("Average test time: %s seconds." % np.mean(test_times), log_file)
     bb.myPrint("---Execution time: %s seconds ---\n" % (time.time() - initial_time), log_file)
 
     log_file.close()
