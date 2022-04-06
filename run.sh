@@ -1,7 +1,8 @@
 #!/bin/bash
 if [ -z $1 ]; then
-    printf "Error! Choose an option.\n1) Aitex\n2) MvTecAD\n3)BTAD"
+    printf "Error! Choose an integer option.\t1 - Aitex\t2 - MvTecAD\t3 - BTAD"
 elif [[ $1 == 1 ]]; then
+    # AITEX
     python ./src/main.py --kernel 7 6 3 2 4 --num_comp 4 4 4 4 4 --layer_of_use 1 2 3 4 5 --distance_measure glo_gaussian --hop_weights 0.2 0.2 0.4 0.5 0.1 -d "aitex"
 elif [[ $1 == 2 ]]; then
 
@@ -51,5 +52,8 @@ elif [[ $1 == 2 ]]; then
     python ./src/main.py --kernel 5 5 3 2 2 --num_comp 5 5 2 4 4 --layer_of_use 1 2 3 4 5 --distance_measure loc_gaussian --hop_weights 0.2 0.3 0.7 0.3 0.3 --class_names zipper -d "mvtec"
 
 elif [[ $1 == 3 ]]; then
-    python ./src/main.py --kernel 7 6 3 2 4 --num_comp 4 4 4 4 4 --layer_of_use 1 2 3 4 5 --distance_measure glo_gaussian --hop_weights 0.2 0.2 0.4 0.5 0.1 -d "btad"
+    # BTAD
+    python ./src/main.py --kernel 3 3 2 4 3 --num_comp 5 2 4 4 3 --layer_of_use 1 2 3 4 5 --distance_measure loc_gaussian --hop_weights 0.7 0.0 0.7 0.4 0.0 --class_names 01 -d "btad"
+    python ./src/main.py --kernel 5 7 3 5 4 --num_comp 4 5 3 5 5 --layer_of_use 1 2 3 4 5 --distance_measure loc_gaussian --hop_weights 0.4 0.0 0.1 0.2 0.4 --class_names 02 -d "btad"
+    python ./src/main.py --kernel 3 4 4 2 5 --num_comp 2 2 4 3 5 --layer_of_use 1 2 3 4 5 --distance_measure loc_gaussian --hop_weights 0.4 0.5 0.2 0.1 0.7 --class_names 03 -d "btad"
 fi
